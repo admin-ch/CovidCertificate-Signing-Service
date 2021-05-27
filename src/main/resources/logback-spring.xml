@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--suppress XmlUnboundNsPrefix -->
+<configuration scan="true" >
+
+    <jmxConfigurator />
+
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- See ch.qos.logback.classic.helpers.MDCInsertingServletFilter for additionally available MDC attributes-->
+            <pattern>%d{HH:mm:ss} %-5level [%X{correlationId}] [%thread] [%logger{10}]: %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.classic.sift.SiftingAppender">
+        <discriminator>
+            <key>loggingContext</key>
+            <defaultValue>webapp</defaultValue>
+        </discriminator>
+        <sift>
+            <appender name="FILE-${loggingContext}" class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <file>${catalina.base}/logs/CC-Signing-Service-${loggingContext}.log</file>
+                <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                    <fileNamePattern>${catalina.base}/logs/CC-Signing-Service-${loggingContext}.%d.log</fileNamePattern>
+                </rollingPolicy>
+                <encoder>
+                    <pattern>%date %-5level [%thread] [%X{correlationId}] [%X{req.remoteUser}] [%X{req.requestedSessionId}]  [%X{req.scheme} %X{req.servername} %X{req.serverport}] [%logger]: %msg%n</pattern>
+                </encoder>
+            </appender>
+        </sift>
+    </appender>
+
+    <logger name="ch.admin.bag" level="DEBUG"/>
+    <logger name="ch.admin.bit.jeap" level="DEBUG"/>
+
+    <!--  Set this the level to WARN or lower in order to output the Authentication Events-->
+    <logger name="org.springframework.security.authentication.event.LoggerListener" level="ERROR"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>
