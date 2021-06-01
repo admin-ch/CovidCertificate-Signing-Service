@@ -13,5 +13,6 @@ public class ProfileRegistry {
      */
     public static final String PROFILE_HSM_MOCK = "hsm-mock";
     public static final String PROFILE_LOCAL = "local";
+    public static final String PROFILE_TLS = "tls";
 }
 

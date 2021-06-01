@@ -10,10 +10,10 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
-import static ch.admin.bag.covidcertificate.signature.config.ProfileRegistry.PROFILE_LOCAL;
+import static ch.admin.bag.covidcertificate.signature.config.ProfileRegistry.PROFILE_TLS;
 
 @EnableWebSecurity
-@Profile(PROFILE_LOCAL)
+@Profile(PROFILE_TLS)
 public class SSLSecurityConfigurationLocal extends WebSecurityConfigurerAdapter {
 
     @Value("${app.signing-service.allowed-user}")

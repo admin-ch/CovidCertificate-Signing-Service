@@ -25,8 +25,8 @@ public class ResponseStatusExceptionHandler extends ResponseEntityExceptionHandl
         return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
     }
 
-    @ExceptionHandler(value = {SignatureException.class})
-    protected ResponseEntity<Object> handleBadRequest(SignatureException ex) {
+    @ExceptionHandler(value = {SignatureException.class, SignatureCreationException.class})
+    protected ResponseEntity<Object> handleBadRequest(Exception ex) {
         log.warn("Failed to create signature:", ex);
         return new ResponseEntity<>("Failed to create signature", HttpStatus.BAD_REQUEST);
     }

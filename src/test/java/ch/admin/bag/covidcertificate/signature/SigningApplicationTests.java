@@ -6,7 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-@ActiveProfiles(ProfileRegistry.PROFILE_HSM_MOCK)
+@ActiveProfiles({ProfileRegistry.PROFILE_HSM_MOCK, ProfileRegistry.PROFILE_LOCAL})
 class SigningApplicationTests {
 
 	@Test

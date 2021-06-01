@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.io.FileNotFoundException;
 import java.security.InvalidKeyException;
@@ -23,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"hsm-mock"})
+@TestPropertySource(properties = {"app.signing-service.monitor.prometheus.user=prometheus",
+        "app.signing-service.monitor.prometheus.password={noop}secret"})
 class CryptoControllerIntegrationTest {
 
     @Autowired
