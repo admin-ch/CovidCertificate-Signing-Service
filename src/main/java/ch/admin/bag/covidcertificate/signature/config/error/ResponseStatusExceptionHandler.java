@@ -30,4 +30,10 @@ public class ResponseStatusExceptionHandler extends ResponseEntityExceptionHandl
         log.warn("Failed to create signature:", ex);
         return new ResponseEntity<>("Failed to create signature", HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(value = {CertificateNotFoundException.class })
+    protected ResponseEntity<Object> handleCertificateNotFoundException(CertificateNotFoundException ex) {
+        log.warn("Certificate not found:", ex);
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
 }

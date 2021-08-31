@@ -1,7 +1,6 @@
 package ch.admin.bag.covidcertificate.signature.web.controller;
 
 
-import com.flextrade.jfixture.JFixture;
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.Nested;
@@ -22,23 +21,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"hsm-mock"})
 @TestPropertySource("file:src/test/resources/application-test.properties")
-class CryptoControllerIntegrationLocalTest {
+class CmsControllerIntegrationLocalTest {
 
     @LocalServerPort
     int localServerPort;
 
-    private final JFixture fixture = new JFixture();
-    private static final String CBOR_CONTENT_TYPE = "application/cbor";
-
     @Nested
     class Sign {
-        private final String URL = "/sign";
+        private final String URL = "/v1/cms/mock";
 
         @Test
         void returnsStatusCode200_whenClientUsesValidCertificateAndTrustsServerCertificate() throws FileNotFoundException {
             request("client-keystore.jks")
-                    .contentType(CBOR_CONTENT_TYPE)
-                    .body(fixture.create(byte[].class)).post(URL)
+                    .get(URL)
                     .then()
                     .assertThat()
                     .statusCode(200);
@@ -48,47 +43,14 @@ class CryptoControllerIntegrationLocalTest {
         void fails_whenClientUsesCertificateNotTrustedByTheServer() {
             assertThrows(SSLHandshakeException.class,
                     () -> request("client-keystore-with-certificate-not-trusted-by-the-server.jks")
-                            .contentType(CBOR_CONTENT_TYPE)
-                            .body(fixture.create(byte[].class)).post(URL));
+                            .get(URL));
         }
 
         @Test
         void fails_whenClientUsesCertificateDoesNotTrustTheCertificateOfServer() {
             assertThrows(SSLHandshakeException.class,
                     () -> request("client-keystore-with-missing-server-certificate-from-truststore.jks")
-                            .contentType(CBOR_CONTENT_TYPE)
-                            .body(fixture.create(byte[].class)).post(URL));
-        }
-    }
-
-    @Nested
-    class SignLight {
-        private final String URL = "/sign-light";
-
-        @Test
-        void returnsStatusCode200_whenClientUsesValidCertificateAndTrustsServerCertificate() throws FileNotFoundException {
-            request("client-keystore.jks")
-                    .contentType(CBOR_CONTENT_TYPE)
-                    .body(fixture.create(byte[].class)).post(URL)
-                    .then()
-                    .assertThat()
-                    .statusCode(200);
-        }
-
-        @Test
-        void fails_whenClientUsesCertificateNotTrustedByTheServer() {
-            assertThrows(SSLHandshakeException.class,
-                    () -> request("client-keystore-with-certificate-not-trusted-by-the-server.jks")
-                            .contentType(CBOR_CONTENT_TYPE)
-                            .body(fixture.create(byte[].class)).post(URL));
-        }
-
-        @Test
-        void fails_whenClientUsesCertificateDoesNotTrustTheCertificateOfServer() {
-            assertThrows(SSLHandshakeException.class,
-                    () -> request("client-keystore-with-missing-server-certificate-from-truststore.jks")
-                            .contentType(CBOR_CONTENT_TYPE)
-                            .body(fixture.create(byte[].class)).post(URL));
+                            .get(URL));
         }
     }
 

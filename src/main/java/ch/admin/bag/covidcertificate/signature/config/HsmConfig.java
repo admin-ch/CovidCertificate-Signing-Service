@@ -3,13 +3,11 @@ package ch.admin.bag.covidcertificate.signature.config;
 import ch.admin.bag.covidcertificate.signature.config.error.SignatureCreationException;
 import ch.admin.bag.covidcertificate.signature.service.KeyStoreEntryReader;
 import ch.admin.bag.covidcertificate.signature.service.LunaSAKeyStoreProvider;
-import com.safenetinc.luna.LunaSlotManager;
 import com.safenetinc.luna.provider.LunaProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Profile;
 
 import java.security.*;
@@ -23,17 +21,14 @@ public class HsmConfig {
 
     private static final String LUNA_PROVIDER;
 
-    @Value("${crs.decryption.keyStoreSlotNumber}")
-    private Integer keyStoreSlotNumber;
-
     @Value("${crs.decryption.keyStorePassword}")
     private String keyStorePassword;
 
     @Value("${crs.decryption.aliasSign}")
     private String aliasSign;
 
-    @Value("${crs.decryption.aliasVerify}")
-    private String aliasVerify;
+    @Value("${crs.decryption.aliasSignLight}")
+    private String aliasSignLight;
 
     static {
         try {
@@ -45,36 +40,32 @@ public class HsmConfig {
         }
     }
 
-    @Bean(destroyMethod = "logout")
-    LunaSlotManager slotManager() {
-        log.debug("slotManager Login with {}", keyStoreSlotNumber);
-        var slotManager = LunaSlotManager.getInstance();
-        slotManager.login(keyStoreSlotNumber, keyStorePassword);
-        return slotManager;
+    @Bean
+    KeyStoreEntryReader keyStoreEntryReader(LunaSAKeyStoreProvider lunaSAKeyStoreProvider) {
+        var keyStore = lunaSAKeyStoreProvider.loadKeyStore();
+        return new KeyStoreEntryReader(lunaSAKeyStoreProvider, keyStore, keyStorePassword.toCharArray());
     }
 
     @Bean
-    @DependsOn("slotManager")
-    KeyStoreEntryReader keyStoreEntryReader() {
-        var keyStore = new LunaSAKeyStoreProvider().loadKeyStore();
-        return new KeyStoreEntryReader(keyStore, keyStorePassword.toCharArray());
+    Supplier<Signature> euSigningSignatureSupplier(KeyStoreEntryReader keyStoreEntryReader) {
+        return () -> initSignature(keyStoreEntryReader, aliasSign);
     }
 
     @Bean
-    Supplier<Signature> signingSignatureSupplier(KeyStoreEntryReader keyStoreEntryReader) {
-        return () -> initSignature(keyStoreEntryReader);
+    Supplier<Signature> lightSigningSignatureSupplier(KeyStoreEntryReader keyStoreEntryReader) {
+        return () -> initSignature(keyStoreEntryReader, aliasSignLight);
     }
 
-    private Signature initSignature(KeyStoreEntryReader keyStoreEntryReader)  {
+    private Signature initSignature(KeyStoreEntryReader keyStoreEntryReader, String privateKeyAlias)  {
         log.debug("signingSignature with {} and {}", SIGNING_ALGORITHM, LUNA_PROVIDER);
         Signature signature;
 
         try {
             signature = Signature.getInstance(SIGNING_ALGORITHM, LUNA_PROVIDER);
-            signature.initSign(keyStoreEntryReader.getPrivateKey(aliasSign));
+            signature.initSign(keyStoreEntryReader.getPrivateKey(privateKeyAlias));
         } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException e) {
             throw new SignatureCreationException(
-                    String.format("Failed to initialize signature with algorithm %s and key for alias %s", SIGNING_ALGORITHM, aliasSign),
+                    String.format("Failed to initialize signature with algorithm %s and key for alias %s", SIGNING_ALGORITHM, privateKeyAlias),
                     e);
         }
 

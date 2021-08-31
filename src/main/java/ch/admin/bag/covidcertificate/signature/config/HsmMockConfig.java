@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 public class HsmMockConfig {
     private static final String SIGNING_ALGORITHM = "SHA512withRSA";
     private static final String ALIAS = "mock";
+    private static final String ALIAS_LIGHT = "mock-light";
 
     private static final String KEYSTORE_RESOURCE = "keystore.jks";
 
@@ -27,23 +28,29 @@ public class HsmMockConfig {
     @Bean
     public KeyStoreEntryReader keyStoreEntryReader() {
         log.info("--------------> Login MOCK HSM");
-        var keyStore = new JksKeystoreProvider(KEYSTORE_RESOURCE, KEY_STORE_PASSWORD).loadKeyStore();
-        return new KeyStoreEntryReader(keyStore, KEY_STORE_PASSWORD.toCharArray());
+        var keystoreProvider = new JksKeystoreProvider(KEYSTORE_RESOURCE, KEY_STORE_PASSWORD);
+        var keyStore = keystoreProvider.loadKeyStore();
+        return new KeyStoreEntryReader(keystoreProvider, keyStore, KEY_STORE_PASSWORD.toCharArray());
     }
 
     @Bean
-    Supplier<Signature> signingSignatureSupplier(KeyStoreEntryReader keyStoreEntryReader) {
-        return () -> initSignature(keyStoreEntryReader);
+    Supplier<Signature> euSigningSignatureSupplier(KeyStoreEntryReader keyStoreEntryReader) {
+        return () -> initSignature(keyStoreEntryReader, ALIAS);
     }
 
-    private Signature initSignature(KeyStoreEntryReader keyStoreEntryReader){
+    @Bean
+    Supplier<Signature> lightSigningSignatureSupplier(KeyStoreEntryReader keyStoreEntryReader) {
+        return () -> initSignature(keyStoreEntryReader, ALIAS_LIGHT);
+    }
+
+    private Signature initSignature(KeyStoreEntryReader keyStoreEntryReader, String privateKeyAlias){
         Signature signature;
         try {
             signature = Signature.getInstance(SIGNING_ALGORITHM);
-            signature.initSign(keyStoreEntryReader.getPrivateKey(ALIAS));
+            signature.initSign(keyStoreEntryReader.getPrivateKey(privateKeyAlias));
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             throw new SignatureCreationException(
-                    String.format("Failed to initialize signature with algorithm %s and key for alias %s", SIGNING_ALGORITHM, ALIAS),
+                    String.format("Failed to initialize signature with algorithm %s and key for alias %s", SIGNING_ALGORITHM, privateKeyAlias),
                     e);
         }
         return signature;

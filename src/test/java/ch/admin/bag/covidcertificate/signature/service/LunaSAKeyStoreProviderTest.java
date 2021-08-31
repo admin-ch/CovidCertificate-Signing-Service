@@ -1,8 +1,12 @@
 package ch.admin.bag.covidcertificate.signature.service;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.security.KeyStore;
@@ -16,8 +20,13 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 
+@ExtendWith(MockitoExtension.class)
 class LunaSAKeyStoreProviderTest {
-    private LunaSAKeyStoreProvider lunaSAKeyStoreProvider =new LunaSAKeyStoreProvider();
+    @InjectMocks
+    private LunaSAKeyStoreProvider lunaSAKeyStoreProvider;
+
+    @Mock
+    private LunaSlotManagerWrapper lunaSlotManager;
 
     @Test
     void loadsKeystore() throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {

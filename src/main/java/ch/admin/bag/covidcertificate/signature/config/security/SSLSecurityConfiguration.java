@@ -17,6 +17,9 @@ public class SSLSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .permitAll();
 
         // Turn off CSRF for this REST service.
-        http.antMatcher("/sign/**").csrf().disable();
+        http.antMatcher("/sign/**")
+                .antMatcher("/v1/cms/**")
+                .csrf()
+                .disable();
     }
 }
