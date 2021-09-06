@@ -50,4 +50,16 @@ public class LunaCMSSigner extends CMSSigner{
 
 		return signedMessaged;
 	}
+	
+	public String sign(byte[] data) throws CertificateEncodingException, IOException {
+		
+
+		String signedMessaged = new LunaCMSSignatureBuilder(LunaProvider.getInstance().getName())
+				.withSigningCertificate(new X509CertificateHolder(signingCertificate.getEncoded()), privateKey)
+				.withPayloadBytes(data).buildAsString();
+
+		log.info("Success");
+
+		return signedMessaged;
+	}
 }
