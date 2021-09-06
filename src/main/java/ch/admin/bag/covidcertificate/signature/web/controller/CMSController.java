@@ -1,5 +1,6 @@
 package ch.admin.bag.covidcertificate.signature.web.controller;
 
+import ch.admin.bag.covidcertificate.signature.api.CMSSigningRequestDto;
 import ch.admin.bag.covidcertificate.signature.api.CMSSigningResponseDto;
 import ch.admin.bag.covidcertificate.signature.service.cms.CMSSigningService;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -32,9 +33,9 @@ final class CMSController {
     }
 
     @PostMapping(value = "/{alias}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public CMSSigningResponseDto signBytes(@PathVariable String alias, @RequestBody String data) {
+    public CMSSigningResponseDto signBytes(@PathVariable String alias, @RequestBody CMSSigningRequestDto data) {
         var aliasDecoded = UriUtils.decode(alias, "UTF-8");
-        var dataDecoded = Base64.getDecoder().decode(data);
+        var dataDecoded = Base64.getDecoder().decode(data.getData());
         log.info("Signing certificate with alias {}", aliasDecoded);
         return cmsSigningService.sign(dataDecoded);
     }
