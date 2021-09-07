@@ -29,4 +29,16 @@ public class CMSSigningService {
 
 	}
 
+	public CMSSigningResponseDto sign(byte[] data) {
+		String signature;
+		try {
+			signature = cmsSigner.sign(data);
+		} catch (CertificateEncodingException | IOException e) {
+			throw new SignatureCreationException("Failed to sing certificate with data ", e);
+		}
+
+		return new CMSSigningResponseDto(signature);
+
+	}
+
 }
