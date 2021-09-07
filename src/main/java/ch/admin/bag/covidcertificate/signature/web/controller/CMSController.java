@@ -32,11 +32,9 @@ final class CMSController {
         return cmsSigningService.sign(aliasDecoded);
     }
 
-    @PostMapping(value = "/{alias}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public CMSSigningResponseDto signBytes(@PathVariable String alias, @RequestBody CMSSigningRequestDto data) {
-        var aliasDecoded = UriUtils.decode(alias, "UTF-8");
+    @PostMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
+    public CMSSigningResponseDto signBytes(@RequestBody CMSSigningRequestDto data) {
         var dataDecoded = Base64.getDecoder().decode(data.getData());
-        log.info("Signing certificate with alias {}", aliasDecoded);
         return cmsSigningService.sign(dataDecoded);
     }
 }

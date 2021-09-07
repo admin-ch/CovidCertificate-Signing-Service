@@ -10,7 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,7 +24,7 @@ class CMSControllerTest {
     private final JFixture fixture = new JFixture();
 
     @Test
-    void shouldCallServiveToSignCertificateWithCorrectAlias(){
+    void shouldCallServiceToSignCertificateWithCorrectAlias(){
         var alias = fixture.create(String.class);
         cmsController.sign(alias);
         verify(cmsSigningService).sign(alias);
@@ -33,7 +33,7 @@ class CMSControllerTest {
     @Test
     void shouldReturnSignedCertificate(){
         var responseDto = fixture.create(CMSSigningResponseDto.class);
-        when(cmsSigningService.sign(any())).thenReturn(responseDto);
+        when(cmsSigningService.sign(anyString())).thenReturn(responseDto);
         var actual = cmsController.sign(fixture.create(String.class));
         assertEquals(responseDto, actual);
     }
