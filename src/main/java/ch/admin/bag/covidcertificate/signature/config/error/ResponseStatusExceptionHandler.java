@@ -7,14 +7,16 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.io.IOException;
 import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
 
 @ControllerAdvice
 @Slf4j
 public class ResponseStatusExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(value = {SecurityException.class})
-    protected ResponseEntity<Object> handleInternalServerError(SecurityException ex) {
+    @ExceptionHandler(value = {SecurityException.class, IOException.class, CertificateEncodingException.class})
+    protected ResponseEntity<Object> handleInternalServerError(Exception ex) {
         log.warn("Internal server error", ex);
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }

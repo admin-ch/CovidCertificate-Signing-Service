@@ -14,7 +14,7 @@ import java.security.PrivateKey;
 import java.util.Base64;
 
 public class LocalCMSSignatureBuilder {
-    private X509CertificateHolder payloadCertificate;
+    private byte[] payloadCertificate;
     private X509CertificateHolder signingCertificate;
     private PrivateKey signingCertificatePrivateKey;
 
@@ -35,9 +35,21 @@ public class LocalCMSSignatureBuilder {
      * Set payload certificate.
      * @param certificate payload certificate
      * @return this
+     * @throws IOException
      */
-    public LocalCMSSignatureBuilder withPayloadCertificate(X509CertificateHolder certificate) {
-        this.payloadCertificate = certificate;
+    public LocalCMSSignatureBuilder withPayloadCertificate(X509CertificateHolder certificate) throws IOException {
+        this.payloadCertificate = certificate.getEncoded();
+        return this;
+    }
+
+    /**
+     * Set payload bytes directly.
+     * 
+     * @param data payload bytes
+     * @return this
+     */
+    public LocalCMSSignatureBuilder withPayloadBytes(byte[] data) {
+        this.payloadCertificate = data;
         return this;
     }
 
@@ -61,9 +73,8 @@ public class LocalCMSSignatureBuilder {
                 signedDataGenerator.addSignerInfoGenerator(signerInfoGenerator);
                 signedDataGenerator.addCertificate(this.signingCertificate);
                 CMSSignedData signedData = signedDataGenerator
-                        .generate(new CMSProcessableByteArray(this.payloadCertificate.getEncoded()), !detached);
-                byte[] messageBytes = signedData.getEncoded();
-                return messageBytes;
+                        .generate(new CMSProcessableByteArray(this.payloadCertificate), !detached);
+                return signedData.getEncoded();
             } catch (CMSException | IOException | OperatorCreationException var9) {
                 throw new RuntimeException("Failed to create signed message");
             }

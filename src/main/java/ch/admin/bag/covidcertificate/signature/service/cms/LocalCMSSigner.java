@@ -19,7 +19,7 @@ import java.security.cert.X509Certificate;
 @Slf4j
 @RequiredArgsConstructor
 @Profile(ProfileRegistry.PROFILE_HSM_MOCK)
-public class LocalCMSSigner extends CMSSigner {
+public class LocalCMSSigner implements CMSSigner {
 	private final KeyStoreEntryReader keyStoreEntryReader;
 
 	@Value("${app.signing-service.keystore.private-key-alias}")
@@ -45,6 +45,15 @@ public class LocalCMSSigner extends CMSSigner {
 				.withPayloadCertificate(new X509CertificateHolder(payloadCertificate.getEncoded())).buildAsString();
 
 
+		log.info("Success");
+
+		return signedMessaged;
+	}
+
+	public String sign(byte[] data) throws CertificateEncodingException, IOException {
+		String signedMessaged = new LocalCMSSignatureBuilder()
+				.withSigningCertificate(new X509CertificateHolder(signingCertificate.getEncoded()), privateKey)
+				.withPayloadBytes(data).buildAsString();
 		log.info("Success");
 
 		return signedMessaged;

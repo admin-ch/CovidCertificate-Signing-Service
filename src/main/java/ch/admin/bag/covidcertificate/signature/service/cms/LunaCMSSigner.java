@@ -20,7 +20,7 @@ import java.security.cert.X509Certificate;
 @Slf4j
 @RequiredArgsConstructor
 @Profile("!"+ ProfileRegistry.PROFILE_HSM_MOCK)
-public class LunaCMSSigner extends CMSSigner{
+public class LunaCMSSigner implements CMSSigner{
 	private final KeyStoreEntryReader keyStoreEntryReader;
 
 	@Value("${app.signing-service.keystore.private-key-alias}")
@@ -45,6 +45,18 @@ public class LunaCMSSigner extends CMSSigner{
 				.withSigningCertificate(new X509CertificateHolder(signingCertificate.getEncoded()), privateKey)
 				.withPayloadCertificate(new X509CertificateHolder(payloadCertificate.getEncoded())).buildAsString();
 
+
+		log.info("Success");
+
+		return signedMessaged;
+	}
+	
+	public String sign(byte[] data) throws CertificateEncodingException, IOException {
+		
+
+		String signedMessaged = new LunaCMSSignatureBuilder(LunaProvider.getInstance().getName())
+				.withSigningCertificate(new X509CertificateHolder(signingCertificate.getEncoded()), privateKey)
+				.withPayloadBytes(data).buildAsString();
 
 		log.info("Success");
 

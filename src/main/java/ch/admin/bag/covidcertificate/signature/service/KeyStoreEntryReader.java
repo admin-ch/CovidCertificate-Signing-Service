@@ -61,6 +61,9 @@ public class KeyStoreEntryReader {
     }
 
     public X509Certificate getCertificate(String alias) {
+        log.debug("GET Certificate {}", alias);
+        rebuildKeystoreIfNeeded(alias);
+
         try {
             var certificate = keyStore.getCertificate(alias);
             if (certificate != null) {

@@ -16,7 +16,7 @@ import java.util.Base64;
 
 public class LunaCMSSignatureBuilder {
 
-    private X509CertificateHolder payloadCertificate;
+    private byte[] payloadCertificate;
     private X509CertificateHolder signingCertificate;
     private PrivateKey signingCertificatePrivateKey;
 
@@ -43,9 +43,21 @@ public class LunaCMSSignatureBuilder {
      * Set payload certificate.
      * @param certificate payload certificate
      * @return this
+     * @throws IOException
      */
-    public LunaCMSSignatureBuilder withPayloadCertificate(X509CertificateHolder certificate) {
-        this.payloadCertificate = certificate;
+    public LunaCMSSignatureBuilder withPayloadCertificate(X509CertificateHolder certificate) throws IOException {
+        this.payloadCertificate = certificate.getEncoded();
+        return this;
+    }
+
+    /**
+     * Set payload certificate.
+     * 
+     * @param data payload bytes
+     * @return this
+     */
+    public LunaCMSSignatureBuilder withPayloadBytes(byte[] data) {
+        this.payloadCertificate = data;
         return this;
     }
 
@@ -73,9 +85,8 @@ public class LunaCMSSignatureBuilder {
                 signedDataGenerator.addSignerInfoGenerator(signerInfoGenerator);
                 signedDataGenerator.addCertificate(this.signingCertificate);
                 CMSSignedData signedData = signedDataGenerator
-                        .generate(new CMSProcessableByteArray(this.payloadCertificate.getEncoded()), !detached);
-                byte[] messageBytes = signedData.getEncoded();
-                return messageBytes;
+                        .generate(new CMSProcessableByteArray(this.payloadCertificate), !detached);
+                return signedData.getEncoded();
             } catch (CMSException | IOException | OperatorCreationException var9) {
                 throw new RuntimeException("Failed to create signed message");
             }

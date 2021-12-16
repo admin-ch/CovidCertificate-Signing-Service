@@ -1,27 +1,42 @@
 package ch.admin.bag.covidcertificate.signature.web.controller;
 
 
+import ch.admin.bag.covidcertificate.signature.api.SigningRequestDto;
+import ch.admin.bag.covidcertificate.signature.api.VerifyRequestDto;
 import ch.admin.bag.covidcertificate.signature.service.KeyStoreEntryReader;
+import ch.admin.bag.covidcertificate.signature.service.KidService;
+import ch.admin.bag.covidcertificate.signature.service.SigningService;
 import com.flextrade.jfixture.JFixture;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.util.Base64;
 
+import static ch.admin.bag.covidcertificate.signature.FixtureCustomization.customizeSigningRequestDto;
+import static ch.admin.bag.covidcertificate.signature.FixtureCustomization.customizeVerifyRequestDto;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -29,18 +44,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestPropertySource(properties = {"app.signing-service.monitor.prometheus.user=prometheus",
         "app.signing-service.monitor.prometheus.password={noop}secret",
         "app.signing-service.keystore.private-key-alias=mock",
-        "app.signing-service.keystore.signing-certificate-alias=mock"
+        "app.signing-service.keystore.signing-certificate-alias=mock",
+        "crs.decryption.aliasSign=mock",
+        "crs.decryption.aliasSignLight=mock-light"
 })
 class CryptoControllerIntegrationTest {
 
     @Autowired
     private KeyStoreEntryReader keyStoreEntryReader;
+    @Autowired
+    private SigningService signingService;
+    @MockBean
+    private KidService kidService;
 
     @LocalServerPort
     int localServerPort;
 
-    private final JFixture fixture = new JFixture();
+    private static final JFixture fixture = new JFixture();
     private static final String CBOR_CONTENT_TYPE = "application/cbor";
+
+    @BeforeEach
+    private void init(){
+        customizeSigningRequestDto(fixture);
+        customizeVerifyRequestDto(fixture, signingService);
+    }
+
 
     @Nested
     class Sign{
@@ -49,8 +77,8 @@ class CryptoControllerIntegrationTest {
         @Test
         void returnsStatusCode200_whenCorrectRequest() throws FileNotFoundException {
             request()
-                    .contentType(CBOR_CONTENT_TYPE)
-                    .body(fixture.create(byte[].class)).post(URL)
+                    .contentType(APPLICATION_JSON_VALUE)
+                    .body(fixture.create(SigningRequestDto.class)).post(URL)
                     .then()
                     .assertThat()
                     .statusCode(200);
@@ -58,25 +86,16 @@ class CryptoControllerIntegrationTest {
 
         @Test
         void returnsCorrectSignature_whenCorrectRequest() throws FileNotFoundException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-            byte[] input = fixture.create(byte[].class);
+            var input = fixture.create(SigningRequestDto.class);
+            var message = Base64.getDecoder().decode(input.getDataToSign());
             byte[] body = request()
-                    .contentType(CBOR_CONTENT_TYPE)
+                    .contentType(APPLICATION_JSON_VALUE)
                     .body(input).post(URL)
                     .then()
                     .extract()
                     .body().asByteArray();
 
-            assertTrue(verifySignature(input, body, "mock"));
-        }
-
-        @Test
-        void returnsStatusCode415_whenContentTypeIsFalse() throws FileNotFoundException {
-            request()
-                    .contentType(ContentType.TEXT)
-                    .body(fixture.create(byte[].class)).post(URL)
-                    .then()
-                    .assertThat()
-                    .statusCode(415);
+            assertTrue(verifySignature(message, body, "mock"));
         }
     }
 
@@ -117,6 +136,68 @@ class CryptoControllerIntegrationTest {
         }
     }
 
+    @Nested
+    class Verify{
+        private final String URL = "/sign/verify";
+
+        @Test
+        void returnsStatusCode200_whenCorrectRequest() throws FileNotFoundException {
+            request()
+                    .contentType(APPLICATION_JSON_VALUE)
+                    .body(fixture.create(VerifyRequestDto.class)).post(URL)
+                    .then()
+                    .assertThat()
+                    .statusCode(200);
+        }
+
+        @Test
+        void returnsTrue_ifCorrectSignature() throws FileNotFoundException {
+            var input = fixture.create(VerifyRequestDto.class);
+            var body = request()
+                    .contentType(APPLICATION_JSON_VALUE)
+                    .body(input).post(URL)
+                    .then()
+                    .extract()
+                    .body().asString();
+
+            assertEquals("true", body);
+        }
+    }
+
+    @Nested
+    class GetKid{
+        private final String URL = "/sign/configuration/kid/mock";
+
+        @BeforeEach
+        void setup() throws CertificateException, IOException, NoSuchAlgorithmException {
+            when(kidService.getKid(any())).thenReturn(fixture.create(String.class));
+        }
+
+        @Test
+        void returnsStatusCode200_whenCorrectRequest() throws FileNotFoundException {
+            request()
+                    .contentType(TEXT_PLAIN_VALUE)
+                    .get(URL)
+                    .then()
+                    .assertThat()
+                    .statusCode(200);
+        }
+
+        @Test
+        void returnsCorrectKid_whenCorrectRequest() throws IOException, CertificateException, NoSuchAlgorithmException {
+            var kid = fixture.create(String.class);
+            when(kidService.getKid(any())).thenReturn(kid);
+
+            var body = request()
+                    .contentType(TEXT_PLAIN_VALUE)
+                    .get(URL)
+                    .then()
+                    .extract()
+                    .body().asString();
+
+            assertEquals(kid, body);
+        }
+    }
 
     private RequestSpecification request() throws FileNotFoundException {
         return RestAssured.given()

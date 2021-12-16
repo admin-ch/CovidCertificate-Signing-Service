@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.util.function.Supplier;
@@ -18,8 +17,6 @@ import java.util.function.Supplier;
 @Slf4j
 public class HsmMockConfig {
     private static final String SIGNING_ALGORITHM = "SHA512withRSA";
-    private static final String ALIAS = "mock";
-    private static final String ALIAS_LIGHT = "mock-light";
 
     private static final String KEYSTORE_RESOURCE = "keystore.jks";
 
@@ -34,25 +31,22 @@ public class HsmMockConfig {
     }
 
     @Bean
-    Supplier<Signature> euSigningSignatureSupplier(KeyStoreEntryReader keyStoreEntryReader) {
-        return () -> initSignature(keyStoreEntryReader, ALIAS);
+    Supplier<Signature> signatureSupplier() {
+        return this::getSignatureInstance;
     }
 
-    @Bean
-    Supplier<Signature> lightSigningSignatureSupplier(KeyStoreEntryReader keyStoreEntryReader) {
-        return () -> initSignature(keyStoreEntryReader, ALIAS_LIGHT);
-    }
-
-    private Signature initSignature(KeyStoreEntryReader keyStoreEntryReader, String privateKeyAlias){
+    private Signature getSignatureInstance()  {
+        log.debug("signingSignature with {}", SIGNING_ALGORITHM);
         Signature signature;
+
         try {
             signature = Signature.getInstance(SIGNING_ALGORITHM);
-            signature.initSign(keyStoreEntryReader.getPrivateKey(privateKeyAlias));
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+        } catch (NoSuchAlgorithmException e) {
             throw new SignatureCreationException(
-                    String.format("Failed to initialize signature with algorithm %s and key for alias %s", SIGNING_ALGORITHM, privateKeyAlias),
+                    String.format("Failed to get signature instance for algorithm %s", SIGNING_ALGORITHM),
                     e);
         }
+
         return signature;
     }
 }

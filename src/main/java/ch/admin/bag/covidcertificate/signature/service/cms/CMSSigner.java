@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
 
 
-abstract class CMSSigner {
-	public abstract String sign(String payloadCertificateAlias) throws CertificateEncodingException, IOException;
+interface CMSSigner {
+	String sign(String payloadCertificateAlias) throws CertificateEncodingException, IOException;
+	
+	String sign(byte[] payloadBytes) throws CertificateEncodingException, IOException;
 }

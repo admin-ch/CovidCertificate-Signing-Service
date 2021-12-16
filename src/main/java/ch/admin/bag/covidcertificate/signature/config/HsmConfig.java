@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 public class HsmConfig {
     private static final String SIGNING_ALGORITHM = "SHA256/RSA/PSS";
 
-    private static final String LUNA_PROVIDER;
+    public static final String LUNA_PROVIDER;
 
     @Value("${crs.decryption.keyStorePassword}")
     private String keyStorePassword;
@@ -47,25 +47,19 @@ public class HsmConfig {
     }
 
     @Bean
-    Supplier<Signature> euSigningSignatureSupplier(KeyStoreEntryReader keyStoreEntryReader) {
-        return () -> initSignature(keyStoreEntryReader, aliasSign);
+    Supplier<Signature> signatureSupplier() {
+        return this::getSignatureInstance;
     }
 
-    @Bean
-    Supplier<Signature> lightSigningSignatureSupplier(KeyStoreEntryReader keyStoreEntryReader) {
-        return () -> initSignature(keyStoreEntryReader, aliasSignLight);
-    }
-
-    private Signature initSignature(KeyStoreEntryReader keyStoreEntryReader, String privateKeyAlias)  {
+    private Signature getSignatureInstance()  {
         log.debug("signingSignature with {} and {}", SIGNING_ALGORITHM, LUNA_PROVIDER);
         Signature signature;
 
         try {
             signature = Signature.getInstance(SIGNING_ALGORITHM, LUNA_PROVIDER);
-            signature.initSign(keyStoreEntryReader.getPrivateKey(privateKeyAlias));
-        } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException e) {
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             throw new SignatureCreationException(
-                    String.format("Failed to initialize signature with algorithm %s and key for alias %s", SIGNING_ALGORITHM, privateKeyAlias),
+                    String.format("Failed to get signature instance for algorithm %s and provider %s", SIGNING_ALGORITHM, LUNA_PROVIDER),
                     e);
         }
 
