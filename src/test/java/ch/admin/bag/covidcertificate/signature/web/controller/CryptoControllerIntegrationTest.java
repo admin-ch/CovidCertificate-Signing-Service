@@ -4,6 +4,7 @@ package ch.admin.bag.covidcertificate.signature.web.controller;
 import ch.admin.bag.covidcertificate.signature.api.SigningRequestDto;
 import ch.admin.bag.covidcertificate.signature.api.VerifyRequestDto;
 import ch.admin.bag.covidcertificate.signature.service.KeyStoreEntryReader;
+import ch.admin.bag.covidcertificate.signature.service.KeyStoreSlot;
 import ch.admin.bag.covidcertificate.signature.service.KidService;
 import ch.admin.bag.covidcertificate.signature.service.SigningService;
 import com.flextrade.jfixture.JFixture;
@@ -20,6 +21,7 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
+import javax.annotation.Resource;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -28,6 +30,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.util.Base64;
+import java.util.Map;
 
 import static ch.admin.bag.covidcertificate.signature.FixtureCustomization.customizeSigningRequestDto;
 import static ch.admin.bag.covidcertificate.signature.FixtureCustomization.customizeVerifyRequestDto;
@@ -41,21 +44,19 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"hsm-mock"})
-@TestPropertySource(properties = {"app.signing-service.monitor.prometheus.user=prometheus",
-        "app.signing-service.monitor.prometheus.password={noop}secret",
-        "app.signing-service.keystore.private-key-alias=mock",
-        "app.signing-service.keystore.signing-certificate-alias=mock",
-        "crs.decryption.aliasSign=mock",
-        "crs.decryption.aliasSignLight=mock-light"
-})
+@TestPropertySource("file:src/test/resources/application-test.properties")
 class CryptoControllerIntegrationTest {
 
-    @Autowired
-    private KeyStoreEntryReader keyStoreEntryReader;
+    @Resource(name="keyStoreEntryReaderMap")
+    private Map<KeyStoreSlot, KeyStoreEntryReader> keyStoreEntryReaderMap;
+
     @Autowired
     private SigningService signingService;
     @MockBean
     private KidService kidService;
+
+    @MockBean
+    private KeyStoreEntryReader keyStoreEntryReader;
 
     @LocalServerPort
     int localServerPort;
@@ -64,14 +65,15 @@ class CryptoControllerIntegrationTest {
     private static final String CBOR_CONTENT_TYPE = "application/cbor";
 
     @BeforeEach
-    private void init(){
+    private void init() {
+        keyStoreEntryReader = keyStoreEntryReaderMap.get(KeyStoreSlot.SLOT_NUMBER_0);
         customizeSigningRequestDto(fixture);
         customizeVerifyRequestDto(fixture, signingService);
     }
 
 
     @Nested
-    class Sign{
+    class Sign {
         private final String URL = "/sign";
 
         @Test
@@ -100,8 +102,9 @@ class CryptoControllerIntegrationTest {
     }
 
     @Nested
-    class SignLight{
+    class SignLight {
         private final String URL = "/sign-light";
+
         @Test
         void returnsStatusCode200_whenCorrectRequest() throws FileNotFoundException {
             request()
@@ -137,7 +140,7 @@ class CryptoControllerIntegrationTest {
     }
 
     @Nested
-    class Verify{
+    class Verify {
         private final String URL = "/sign/verify";
 
         @Test
@@ -165,12 +168,12 @@ class CryptoControllerIntegrationTest {
     }
 
     @Nested
-    class GetKid{
+    class GetKid {
         private final String URL = "/sign/configuration/kid/mock";
 
         @BeforeEach
         void setup() throws CertificateException, IOException, NoSuchAlgorithmException {
-            when(kidService.getKid(any())).thenReturn(fixture.create(String.class));
+            when(kidService.getKid(any(), any())).thenReturn(fixture.create(String.class));
         }
 
         @Test
@@ -186,7 +189,7 @@ class CryptoControllerIntegrationTest {
         @Test
         void returnsCorrectKid_whenCorrectRequest() throws IOException, CertificateException, NoSuchAlgorithmException {
             var kid = fixture.create(String.class);
-            when(kidService.getKid(any())).thenReturn(kid);
+            when(kidService.getKid(any(), any())).thenReturn(kid);
 
             var body = request()
                     .contentType(TEXT_PLAIN_VALUE)

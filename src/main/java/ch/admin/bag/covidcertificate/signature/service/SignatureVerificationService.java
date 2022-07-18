@@ -6,23 +6,28 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.security.InvalidKeyException;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.util.Map;
 import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class SignatureVerificationService {
-    private final KeyStoreEntryReader keyStoreEntryReader;
+
+    @Resource(name = "keyStoreEntryReaderMap")
+    private final Map<KeyStoreSlot, KeyStoreEntryReader> keyStoreEntryReaderMap;
+
     private final ObjectProvider<Signature> signatureProvider;
     private final Supplier<Signature> signatureSupplier;
 
 
-    public boolean verifySignature(byte[] dataToSign, byte[] signature, String certificateAlias)  {
+    public boolean verifySignature(byte[] dataToSign, byte[] signature, String certificateAlias, KeyStoreSlot slot) {
         var verifySignature = this.signatureProvider.getIfAvailable(signatureSupplier);
-        var certificate = keyStoreEntryReader.getCertificate(certificateAlias);
+        var certificate = keyStoreEntryReaderMap.get(slot).getCertificate(certificateAlias);
 
         try {
             verifySignature.initVerify(certificate);

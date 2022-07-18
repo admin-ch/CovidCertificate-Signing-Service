@@ -29,7 +29,7 @@ public class JksKeystoreProvider implements KeyStoreProvider {
 
             return keyStore;
         } catch (IOException | CertificateException | NoSuchAlgorithmException | KeyStoreException e) {
-            throw new IllegalStateException("Could not open the " + keystoreResource + " keystore: " + e.getMessage(), e);
+            throw new IllegalStateException(String.format("Could not open the keystore for resource %s: %s", keystoreResource, e.getMessage()), e);
         }
     }
 

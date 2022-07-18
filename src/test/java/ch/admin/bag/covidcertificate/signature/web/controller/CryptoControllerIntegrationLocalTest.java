@@ -1,16 +1,12 @@
 package ch.admin.bag.covidcertificate.signature.web.controller;
 
 
-import ch.admin.bag.covidcertificate.signature.FixtureCustomization;
 import ch.admin.bag.covidcertificate.signature.api.SigningRequestDto;
 import ch.admin.bag.covidcertificate.signature.api.VerifyRequestDto;
 import ch.admin.bag.covidcertificate.signature.service.SigningService;
 import com.flextrade.jfixture.JFixture;
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -19,12 +15,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.TestPropertySources;
 import org.springframework.util.ResourceUtils;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Base64;
 
 import static ch.admin.bag.covidcertificate.signature.FixtureCustomization.customizeSigningRequestDto;
 import static ch.admin.bag.covidcertificate.signature.FixtureCustomization.customizeVerifyRequestDto;
@@ -35,7 +31,10 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"hsm-mock"})
-@TestPropertySource("file:src/test/resources/application-test.properties")
+@TestPropertySources({
+        @TestPropertySource("file:src/test/resources/application-test.properties"),
+        @TestPropertySource("file:src/test/resources/application-test-mtls.properties")
+})
 class CryptoControllerIntegrationLocalTest {
 
     @LocalServerPort
@@ -48,7 +47,7 @@ class CryptoControllerIntegrationLocalTest {
     private static final String CBOR_CONTENT_TYPE = "application/cbor";
 
     @BeforeEach
-    private void init(){
+    private void init() {
         customizeSigningRequestDto(fixture);
         customizeVerifyRequestDto(fixture, signingService);
     }
@@ -176,6 +175,7 @@ class CryptoControllerIntegrationLocalTest {
                             .get(URL));
         }
     }
+
     private RequestSpecification request(String keystore) throws FileNotFoundException {
         return RestAssured.given()
                 .baseUri("https://localhost")
@@ -185,6 +185,6 @@ class CryptoControllerIntegrationLocalTest {
     }
 
     private File getFile(String keystoreFilename) throws FileNotFoundException {
-        return ResourceUtils.getFile("src/test/resources/"+keystoreFilename);
+        return ResourceUtils.getFile("src/test/resources/" + keystoreFilename);
     }
 }

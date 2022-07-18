@@ -2,6 +2,7 @@ package ch.admin.bag.covidcertificate.signature.service.cms;
 
 import ch.admin.bag.covidcertificate.signature.config.ProfileRegistry;
 import ch.admin.bag.covidcertificate.signature.service.KeyStoreEntryReader;
+import ch.admin.bag.covidcertificate.signature.service.KeyStoreSlot;
 import com.safenetinc.luna.provider.LunaProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,17 +12,24 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Map;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 @Profile("!"+ ProfileRegistry.PROFILE_HSM_MOCK)
 public class LunaCMSSigner implements CMSSigner{
-	private final KeyStoreEntryReader keyStoreEntryReader;
+
+	@Resource(name="keyStoreEntryReaderMap")
+	private final Map<KeyStoreSlot, KeyStoreEntryReader> keyStoreEntryReaderMap;
+
+	@Value("${crs.decryption.euCertificateKeyStoreSlot}")
+	private KeyStoreSlot euCertificateSlot;
 
 	@Value("${app.signing-service.keystore.private-key-alias}")
 	private String privateKeyAlias;
@@ -34,32 +42,21 @@ public class LunaCMSSigner implements CMSSigner{
 
 	@PostConstruct
 	private void init(){
-		privateKey = keyStoreEntryReader.getPrivateKey(privateKeyAlias);
-		signingCertificate = keyStoreEntryReader.getCertificate(signingCertificateAlias);
+		privateKey = keyStoreEntryReaderMap.get(euCertificateSlot).getPrivateKey(privateKeyAlias);
+		signingCertificate = keyStoreEntryReaderMap.get(euCertificateSlot).getCertificate(signingCertificateAlias);
 	}
 
-	public String sign(String payloadCertificateAlias) throws CertificateEncodingException, IOException {
-		var payloadCertificate= keyStoreEntryReader.getCertificate(payloadCertificateAlias);
+	public String sign(String payloadCertificateAlias, KeyStoreSlot slot) throws CertificateEncodingException, IOException {
+		var payloadCertificate= keyStoreEntryReaderMap.get(slot).getCertificate(payloadCertificateAlias);
 
-		String signedMessaged = new LunaCMSSignatureBuilder(LunaProvider.getInstance().getName())
+		return new LunaCMSSignatureBuilder(LunaProvider.getInstance().getName())
 				.withSigningCertificate(new X509CertificateHolder(signingCertificate.getEncoded()), privateKey)
 				.withPayloadCertificate(new X509CertificateHolder(payloadCertificate.getEncoded())).buildAsString();
-
-
-		log.info("Success");
-
-		return signedMessaged;
 	}
 	
 	public String sign(byte[] data) throws CertificateEncodingException, IOException {
-		
-
-		String signedMessaged = new LunaCMSSignatureBuilder(LunaProvider.getInstance().getName())
+		return new LunaCMSSignatureBuilder(LunaProvider.getInstance().getName())
 				.withSigningCertificate(new X509CertificateHolder(signingCertificate.getEncoded()), privateKey)
 				.withPayloadBytes(data).buildAsString();
-
-		log.info("Success");
-
-		return signedMessaged;
 	}
 }
