@@ -10,7 +10,7 @@
     </parent>
     <groupId>ch.admin.bag.covidcertificate</groupId>
     <artifactId>cc-signing-service</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>4.4.3</version>
     <packaging>war</packaging>
     <name>cc-signing-service</name>
     <description>Service for signing Covid Certificates</description>
