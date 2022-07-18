@@ -1,9 +1,8 @@
 package ch.admin.bag.covidcertificate.signature.service;
 
+import com.flextrade.jfixture.JFixture;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -16,25 +15,29 @@ import java.security.cert.CertificateException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 
 @ExtendWith(MockitoExtension.class)
-class LunaSAKeyStoreProviderTest {
-    @InjectMocks
-    private LunaSAKeyStoreProvider lunaSAKeyStoreProvider;
+class LunaKeyStoreProviderTest {
+    private final KeyStoreSlot slot = fixture.create(KeyStoreSlot.class);
+    private final String password = fixture.create(String.class);
 
-    @Mock
-    private LunaSlotManagerWrapper lunaSlotManager;
+    private final LunaKeyStoreProvider lunaKeyStoreProvider = new LunaKeyStoreProvider(slot, password);
+
+    private static final JFixture fixture = new JFixture();
 
     @Test
-    void loadsKeystore() throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
+    void loadsKeystoreWithCorrectPassword() throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
         KeyStore keystoreMock = mock(KeyStore.class);
         try (MockedStatic<KeyStore> keystore = Mockito.mockStatic(KeyStore.class)) {
             keystore.when((MockedStatic.Verification) KeyStore.getInstance(anyString())).thenReturn(keystoreMock);
-            lunaSAKeyStoreProvider.loadKeyStore();
-            verify(keystoreMock).load(null, null);
+            lunaKeyStoreProvider.loadKeyStore();
+            verify(keystoreMock).load(any(), eq(password.toCharArray()));
         }
     }
 
@@ -43,7 +46,7 @@ class LunaSAKeyStoreProviderTest {
         KeyStore keystoreMock = mock(KeyStore.class);
         try (MockedStatic<KeyStore> keystore = Mockito.mockStatic(KeyStore.class)) {
             keystore.when((MockedStatic.Verification) KeyStore.getInstance(anyString())).thenReturn(keystoreMock);
-            KeyStore actual = lunaSAKeyStoreProvider.loadKeyStore();
+            KeyStore actual = lunaKeyStoreProvider.loadKeyStore();
             assertEquals(keystoreMock, actual);
         }
     }
@@ -53,7 +56,7 @@ class LunaSAKeyStoreProviderTest {
         try (MockedStatic<KeyStore> keystore = Mockito.mockStatic(KeyStore.class)) {
             keystore.when((MockedStatic.Verification) KeyStore.getInstance(anyString())).thenThrow(new KeyStoreException());
             assertThrows(IllegalStateException.class,
-                    () -> lunaSAKeyStoreProvider.loadKeyStore());
+                    () -> lunaKeyStoreProvider.loadKeyStore());
         }
     }
 }

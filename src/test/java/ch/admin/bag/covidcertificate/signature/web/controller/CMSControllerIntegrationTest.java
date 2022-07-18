@@ -17,13 +17,7 @@ import java.util.Base64;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"hsm-mock"})
-@TestPropertySource(properties = {"app.signing-service.monitor.prometheus.user=prometheus",
-        "app.signing-service.monitor.prometheus.password={noop}secret",
-        "app.signing-service.keystore.private-key-alias=mock",
-        "app.signing-service.keystore.signing-certificate-alias=mock",
-        "crs.decryption.aliasSign=mock",
-        "crs.decryption.aliasSignLight=mock-light"
-})
+@TestPropertySource("file:src/test/resources/application-test.properties")
 class CMSControllerIntegrationTest {
     @LocalServerPort
     int localServerPort;
@@ -31,12 +25,16 @@ class CMSControllerIntegrationTest {
     private final JFixture fixture = new JFixture();
 
     @Nested
-    class Sign{
-        private final String URL = "/v1/cms/";
+    class Sign {
+        private final String URL = "/v1/cms/slots/{slotNumber}/alias/{alias}";
 
         @Test
         void returnsStatusCode200_whenCorrectRequest() throws FileNotFoundException {
-            request().get(URL+"mock")
+            String validUrl = URL
+                    .replace("{slotNumber}", "0")
+                    .replace("{alias}", "mock");
+
+            request().get(validUrl)
                     .then()
                     .assertThat()
                     .statusCode(200);
@@ -44,7 +42,11 @@ class CMSControllerIntegrationTest {
 
         @Test
         void returnsStatusCode404_whenAliasDoesNotExist() throws FileNotFoundException {
-            request().get(URL+fixture.create(String.class))
+            String invalidUrl = URL
+                    .replace("{slotNumber}", "0")
+                    .replace("{alias}", fixture.create(String.class));
+
+            request().get(invalidUrl)
                     .then()
                     .assertThat()
                     .statusCode(404);
@@ -52,7 +54,7 @@ class CMSControllerIntegrationTest {
     }
 
     @Nested
-    class SignBytes{
+    class SignBytes {
         private final String URL = "/v1/cms/";
 
         @Test

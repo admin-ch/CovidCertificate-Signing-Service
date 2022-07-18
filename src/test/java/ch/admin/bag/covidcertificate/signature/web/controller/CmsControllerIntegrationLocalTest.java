@@ -12,6 +12,7 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.TestPropertySources;
 import org.springframework.util.ResourceUtils;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -24,16 +25,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"hsm-mock"})
-@TestPropertySource("file:src/test/resources/application-test.properties")
+@TestPropertySources({
+        @TestPropertySource("file:src/test/resources/application-test.properties"),
+        @TestPropertySource("file:src/test/resources/application-test-mtls.properties")
+})
 class CmsControllerIntegrationLocalTest {
 
     @LocalServerPort
     int localServerPort;
+
     private final JFixture fixture = new JFixture();
 
     @Nested
     class Sign {
-        private final String URL = "/v1/cms/mock";
+        private final String URL = "/v1/cms/slots/0/alias/mock";
 
         @Test
         void returnsStatusCode200_whenClientUsesValidCertificateAndTrustsServerCertificate() throws FileNotFoundException {
@@ -101,6 +106,6 @@ class CmsControllerIntegrationLocalTest {
     }
 
     private File getFile(String keystoreFilename) throws FileNotFoundException {
-        return ResourceUtils.getFile("src/test/resources/"+keystoreFilename);
+        return ResourceUtils.getFile("src/test/resources/" + keystoreFilename);
     }
 }
