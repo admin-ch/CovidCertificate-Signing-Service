@@ -10,7 +10,7 @@
     </parent>
     <groupId>ch.admin.bag.covidcertificate</groupId>
     <artifactId>cc-signing-service</artifactId>
-    <version>4.7.2</version>
+    <version>4.7.3</version>
     <packaging>war</packaging>
     <name>cc-signing-service</name>
     <description>Service for signing Covid Certificates</description>
@@ -33,15 +33,7 @@
             **/config/*,**/*Exception.java,**/*Config.java,**/*Mock*,**/*Application.java
         </sonar.coverage.exclusions>
     </properties>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>1.32</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+
     <dependencies>
 
         <dependency>
