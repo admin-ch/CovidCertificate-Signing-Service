@@ -5,17 +5,17 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.6.10</version>
+        <version>2.7.5</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>ch.admin.bag.covidcertificate</groupId>
     <artifactId>cc-signing-service</artifactId>
-    <version>4.7.3</version>
+    <version>4.9.0</version>
     <packaging>war</packaging>
     <name>cc-signing-service</name>
     <description>Service for signing Covid Certificates</description>
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
 
         <bcpkix.version>1.70</bcpkix.version>
         <byte-buddy.version>1.12.17</byte-buddy.version>
