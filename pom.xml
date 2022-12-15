@@ -5,12 +5,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.5</version>
+        <version>2.7.6</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>ch.admin.bag.covidcertificate</groupId>
     <artifactId>cc-signing-service</artifactId>
-    <version>4.9.0</version>
+    <version>4.9.1</version>
     <packaging>war</packaging>
     <name>cc-signing-service</name>
     <description>Service for signing Covid Certificates</description>
@@ -21,18 +21,45 @@
         <byte-buddy.version>1.12.17</byte-buddy.version>
         <httpclient.version>4.5.13</httpclient.version>
         <io.rest-assured.version>5.2.0</io.rest-assured.version>
+        <jackson-core.version>2.14.1</jackson-core.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
         <jasypt-spring-boot-starter.version>3.0.0</jasypt-spring-boot-starter.version>
         <jfixture-mockito.version>2.7.2</jfixture-mockito.version>
         <luna-provider.version>6.3-temp</luna-provider.version>
         <mockito.version>4.8.0</mockito.version>
-        <springdoc.version>1.6.11</springdoc.version>
+        <snakeyaml.version>1.32</snakeyaml.version>
+        <spring-cloud.version>2021.0.4</spring-cloud.version>
+        <springdoc.version>1.6.13</springdoc.version>
 
-        <log4j2.version>2.18.0</log4j2.version>
+        <log4j2.version>2.19.0</log4j2.version>
         <sonar.coverage.exclusions>
             **/config/*,**/*Exception.java,**/*Config.java,**/*Mock*,**/*Application.java
         </sonar.coverage.exclusions>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson-core.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
 
